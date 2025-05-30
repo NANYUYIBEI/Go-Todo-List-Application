@@ -55,7 +55,7 @@
 *   **前后端分离概念**:
     *   前端 (`static/script.js`) 通过 JavaScript 发起 API 请求，后端 Go 程序 (`main.go`) 处理请求并返回数据。
 *   **Postman (或类似 API 测试工具) 的使用**:
-    *   如何使用 Postman 测试你开发的后端 API 接口，验证其功能是否符合预期。
+    *   如何使用 Postman 测试您开发的后端 API 接口，验证其功能是否符合预期。
 *   **数据库管理工具 (DBMS) 的使用**:
     *   例如 DB Browser for SQLite，用于查看和管理 Sqlite 数据库文件 (`todo.db`)，检查表结构和数据。
 *   **Go 项目基础结构**:
@@ -90,10 +90,10 @@
     ```bash
     go run main.go
     ```
-    服务器通常会监听在 `8000` 端口。你会在控制台看到类似 `Server started at :8000` 的输出。
+    服务器通常会监听在 `8000` 端口。您会在控制台看到类似 `Server started at :8000` 的输出。
 
 4.  **在浏览器中打开**:
-    打开你的网页浏览器，访问:
+    打开您的网页浏览器，访问:
     [http://localhost:8000/static/index.html](http://localhost:8000/static/index.html)
 
 ## 项目结构
@@ -116,7 +116,7 @@ Go-Todo-List-Application/
 
 ## API 端点 (请根据 `main.go` 中的实际实现进行核对和修改)
 
-你的应用可能会暴露以下 API 端点供前端调用：
+您的应用可能会暴露以下 API 端点供前端调用：
 
 *   `GET /api/tasks` - 获取所有任务
 *   `POST /api/tasks` - 创建一个新任务
@@ -127,13 +127,13 @@ Go-Todo-List-Application/
 *   `DELETE /api/tasks/{id}` - 删除指定 ID 的任务
 *   `PUT /api/tasks/{id}/toggle` - (示例) 切换指定 ID 任务的完成状态 (也可能直接通过 `PUT /api/tasks/{id}` 更新 `completed` 字段实现)
 
-**注意**: 上述 API 端点是常见的 RESTful 示例。请检查你的 `main.go` 文件以确认实际使用的路由和请求/响应格式。
+**注意**: 上述 API 端点是常见的 RESTful 示例。请检查您的 `main.go` 文件以确认实际使用的路由和请求/响应格式。
 
 ## 使用 Postman 测试 API
 
-1.  启动你的 Go 服务器 (`go run main.go`)。
+1.  启动您的 Go 服务器 (`go run main.go`)。
 2.  打开 Postman。
-3.  根据你的实际 API 端点创建请求：
+3.  根据您的实际 API 端点创建请求：
     *   **获取所有任务 (示例)**:
         *   方法: `GET`
         *   URL: `http://localhost:8000/api/tasks`
@@ -151,9 +151,9 @@ Go-Todo-List-Application/
 
 ## 数据库查看
 
-你可以使用 [DB Browser for SQLite](https://sqlitebrowser.org/) 打开项目根目录下的 `todo.db` (或 Gorm 配置中指定的数据库文件名) 来查看 `tasks` 表的结构和数据，验证 Gorm 操作是否正确。
+您可以使用 [DB Browser for SQLite](https://sqlitebrowser.org/) 打开项目根目录下的 `todo.db` (或 Gorm 配置中指定的数据库文件名) 来查看 `tasks` 表的结构和数据，验证 Gorm 操作是否正确。
 
 ## 贡献
 
-欢迎提出改进建议！如果你想贡献，请 Fork 本仓库并发起 Pull Request。
+欢迎提出改进建议！如果您想贡献，请 Fork 本仓库并发起 Pull Request。
 
