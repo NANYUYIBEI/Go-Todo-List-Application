@@ -153,6 +153,8 @@ Go-Todo-List-Application/
 
 你可以使用 [DB Browser for SQLite](https://sqlitebrowser.org/) 打开项目根目录下的 `todo.db` (或 Gorm 配置中指定的数据库文件名) 来查看 `tasks` 表的结构和数据，验证 Gorm 操作是否正确。
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/NANYUYIBEI/Go-Todo-List-Application)
+
 ## 贡献
 
 欢迎提出改进建议！如果您想贡献，请 Fork 本仓库并发起 Pull Request。
