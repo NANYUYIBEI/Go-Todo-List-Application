@@ -1,0 +1,107 @@
+
+services:
+  # 1. MySQL 数据库服务
+  mysql:
+    image: mysql:8.0
+    container_name: todo-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: qq1595215609 # 生产环境请使用更强的密码
+      MYSQL_DATABASE: todo_app
+      # MYSQL_USER: root #
+      # MYSQL_PASSWORD: password_secure 
+    ports:
+      - "3306:3306" # 将容器的 3306 端口映射到主机的 3306 端口
+    volumes:
+      - mysql-data:/var/lib/mysql # 数据持久化
+    healthcheck: # 健康检查，确保 MySQL 真正启动并准备就绪
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword_secure"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - todo-network # 加入自定义网络
+
+  # 2. Redis 缓存服务
+  redis:
+    image: redis:6.2-alpine # 使用轻量级 Alpine 镜像
+    container_name: todo-redis
+    ports:
+      - "6379:6379" # 将容器的 6379 端口映射到主机的 6379 端口
+    volumes:
+      - redis-data:/data # 数据持久化
+    networks:
+      - todo-network # 加入自定义网络
+
+  # 3. Zookeeper 服务 (Kafka 的依赖)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.3 # Confluent 提供的 Zookeeper 镜像
+    container_name: todo-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181" # 将容器的 2181 端口映射到主机的 2181 端口
+    networks:
+      - todo-network # 加入自定义网络
+
+  # 4. Kafka 服务
+  kafka:
+    image: confluentinc/cp-kafka:7.5.3 # Confluent 提供的 Kafka 镜像
+    container_name: todo-kafka
+    depends_on: # 依赖 Zookeeper，确保 Zookeeper 先启动
+      zookeeper:
+        condition: service_started
+    ports:
+      - "9092:9092" # 用于外部客户端连接 (例如 Kafka 命令行工具)
+      - "9093:9093" # 用于容器内部服务连接
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 # 指向 Zookeeper 服务名
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      # KAFKA_ADVERTISED_LISTENERS 告诉外部和内部客户端如何连接 Kafka
+      # PLAINTEXT_HOST 用于外部连接 (宿主机)，使用 localhost:9092
+      # PLAINTEXT 用于内部连接 (Docker 网络)，使用 kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9093,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    networks:
+      - todo-network # 加入自定义网络
+
+  # 5. Go 应用程序服务
+  app:
+    build:
+      context: . # Dockerfile 位于当前目录
+      dockerfile: Dockerfile
+    container_name: go-todo-app-gin
+    ports:
+      - "8000:8000" # 将容器的 8000 端口映射到主机的 8000 端口
+    volumes:
+      # 挂载静态文件到容器，确保 Gin 可以提供前端页面
+      - ./static:/app/static
+      # 如果你需要数据库文件或其他持久化数据，也可以挂载，但现在 MySQL 是独立服务，不需要 /app/data
+      # - ./data:/app/data
+    depends_on: # 确保依赖的服务都启动后，Go 应用才启动
+      mysql:
+        condition: service_healthy # 依赖 MySQL 健康检查通过
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
+    environment: # 传递环境变量给 Go 应用
+      # 注意：这里使用 Docker Compose 内部的服务名作为主机名 (mysql, redis, kafka)
+      MYSQL_DSN: "root:qq1595215609@tcp(mysql:3306)/todo_app?charset=utf8mb4&parseTime=True&loc=Local"
+      REDIS_ADDR: "redis:6379"
+      KAFKA_BROKER: "kafka:9093" # 容器内部通信使用 9093 端口
+      KAFKA_TOPIC: "todo_events"
+      SERVER_PORT: "8000"
+    networks:
+      - todo-network # 加入自定义网络
+
+volumes: # 定义数据卷，用于数据持久化
+  mysql-data:
+  redis-data:
+
+networks: # 定义自定义网络，使服务之间可以通过服务名互相通信
+  todo-network:
+    driver: bridge

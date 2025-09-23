@@ -1,0 +1,16 @@
+# 编译产物
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试相关
+test.db
+test.db-journal
+/data/
+
+# 系统和编辑器配置
+.DS_Store
+.vscode/
+Thumbs.db
