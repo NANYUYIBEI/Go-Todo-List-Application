@@ -235,6 +235,57 @@
 
 ---
 
+## 📈 性能测试 (使用 JMeter)
+
+本项目通过 JMeter 进行了性能压测，以评估在高并发场景下的 API 响应时间、吞吐量及稳定性。
+
+### 测试工具
+
+*   **Apache JMeter**
+
+### 测试场景
+
+模拟100个并发用户，每个用户循环执行80次任务创建和任务获取操作 (总计16000次请求)，数据库中已预置大量测试数据。
+
+### 测试计划
+
+1.  **Thread Group 配置：**
+    *   Number of Threads (users)：100
+    *   Ramp-up period (seconds)：10
+    *   Loop Count：80
+2.  **HTTP Request Defaults：** Protocol: `http`, Server Name: `localhost`, Port: `8000`
+3.  **`POST /api/create` (创建任务)：**
+    *   Method: `POST`, Path: `/api/create`
+    *   Headers: `Content-Type: application/json`
+    *   Body Data:
+        ```json
+        {
+            "name": "JMeter Test Task ${__RandomString(10,abcdefghijklmnopqrstuvwxyz,)}",
+            "description": "Description for JMeter test task ${__time(yyyy-MM-dd HH:mm:ss,)}"
+        }
+        ```
+4.  **`GET /api/get-all-todos?page=X&pageSize=Y` (获取所有任务 - **带分页**)：**
+    *   Method: `GET`, Path: `/api/get-all-todos`
+    *   Parameters: `page: ${__Random(1,100,)}`, `pageSize: 10` (假设有100页)
+    *   Headers: `Content-Type: application/json`
+5.  **监听器：** View Results Tree, Summary Report, Aggregate Report。
+
+### **性能测试结果概览 (分页优化后)**
+
+| Label        | # Samples | Average (ms) | Median (ms) | 90% Line (ms) | 95% Line (ms) | 99% Line (ms) | Error % | Throughput (req/sec) |
+| :----------- | :-------- | :----------- | :---------- | :------------ | :------------ | :------------ | :------------ | :------ | :------------------- |
+| Create Todo  | 8000      | 217          | 94          | 1007          | 1021          | 1046          | 0.06%   | 260.0/sec            |
+| Get All Todos| 8000      | 32           | 28          | 58            | 66            | 97            | 0.00%   | 268.9/sec            |
+| **TOTAL**    | **16000** | **124**      | **51**      | **164**       | **1007**      | **1031**      | **0.03%** | **519.9/sec**        |
+
+*   **总吞吐量 (Total QPS)：** **519.9 req/sec**
+*   **错误率 (Error Rate)：** **0.03% (几乎为零)**
+*   **关键优化效果：**
+    *   **任务查询（Get All Todos）平均响应时间从 3272ms 降至 32ms (提升99%)。**
+    *   **总体吞吐量从 228.2 req/sec 飙升至 519.9 req/sec (提升128%)。**
+    *   **系统在高并发下错误率保持在极低的0.03%，稳定性极佳。**
+*   **解读：** 通过引入分页查询和 Redis 缓存策略，应用程序成功克服了海量数据下的全量查询瓶颈。在100个并发用户、总计16000次请求的极限压力下，系统展现出卓越的高性能和稳定性，证明了分布式架构与优化措施的有效性。
+
 ## 📦 Docker Hub 镜像
 
 本项目已将构建好的应用镜像发布至 Docker Hub，方便快速部署和验证。
