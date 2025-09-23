@@ -240,7 +240,7 @@
 本项目已将构建好的应用镜像发布至 Docker Hub，方便快速部署和验证。
 
 *   **镜像名称：** `nanyui/go-todo-app:1.0`
-*   **Docker Hub 地址：** [https://hub.docker.com/r/nanyui/go-todo-app](https://hub.docker.com/r/nanyui/go-todo-app) (请确保这个链接是正确的)
+*   **Docker Hub 地址：** [https://hub.docker.com/r/nanyui/go-todo-app](https://hub.docker.com/r/nanyui/go-todo-app) 
 
 你可以通过以下命令直接拉取此镜像并集成到你自己的 `docker-compose.yml` 中（将 `app` 服务的 `build` 部分替换为 `image: nanyui/go-todo-app:1.0`）。
 
