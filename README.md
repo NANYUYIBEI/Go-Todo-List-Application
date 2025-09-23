@@ -42,14 +42,18 @@
 
 ## 🚀 安装与运行
 
-推荐使用 Docker Compose 部署整个应用栈（Go应用、MySQL、Redis、Kafka、Zookeeper）。
+你可以通过多种方式来运行此项目，推荐使用 Docker Compose 以获得最顺畅的体验。
 
-### 前提条件
+### 方式一：通过 Docker Compose (推荐)
+
+这是最推荐的运行方式，只需几条命令即可完成所有操作。
+
+#### 前提条件
 
 *   **Git：** 用于克隆代码仓库。
 *   **Docker Desktop：** (包含 Docker Engine 和 Docker Compose) 确保其已安装并正在运行。
 
-### 步骤
+#### 步骤
 
 1.  **克隆仓库：**
     ```bash
@@ -87,10 +91,11 @@
     ```bash
     docker-compose up -d --build
     ```
-    *   如果遇到端口冲突（例如 3306 或 8000 端口被占用），请使用 `netstat -ano | findstr :<端口号>` 查找占用进程的 PID，然后在任务管理器中结束该进程。
-    *   如果 Go 应用容器启动失败（日志中显示 MySQL 连接失败），请检查 `docker-compose.yml` 中 `app` 服务的 `MYSQL_DSN` 密码是否与 `mysql` 服务的 `MYSQL_ROOT_PASSWORD` 一致。
-    *   你可以使用 `docker-compose ps` 查看所有容器的运行状态，确保它们都处于 `Up` (或 `healthy`) 状态。
-    *   使用 `docker-compose logs -f` 可以实时查看所有服务的日志输出。
+    *   **故障排除提示：**
+        *   如果遇到端口冲突（例如 3306、6379、9092、2181 或 8000 端口被占用），请使用 `netstat -ano | findstr :<端口号>` 查找占用进程的 PID，然后在任务管理器中结束该进程。
+        *   如果 Go 应用容器启动失败（日志中显示 MySQL 连接失败），请检查 `docker-compose.yml` 中 `app` 服务的 `MYSQL_DSN` 密码是否与 `mysql` 服务的 `MYSQL_ROOT_PASSWORD` 一致。
+        *   你可以使用 `docker-compose ps` 查看所有容器的运行状态，确保它们都处于 `Up` (或 `healthy`) 状态。
+        *   使用 `docker-compose logs -f` 可以实时查看所有服务的日志输出。
 
 4.  **访问应用：**
     *   打开浏览器，访问 `http://localhost:8000/static/index.html`。
@@ -102,6 +107,82 @@
     docker-compose down --volumes --remove-orphans
     ```
     *   这会停止并移除所有容器、网络和数据卷（包括 MySQL 和 Redis 的持久化数据）。
+
+### 方式二：通过 Docker (手动构建/拉取应用镜像)
+
+这种方式可以单独运行 Go 应用容器，但你需要确保其他依赖服务（MySQL、Redis、Kafka）已在其他地方运行并可访问。
+
+#### 前提条件
+
+*   **Git** 和 **Docker Desktop**。
+*   **手动配置和运行 MySQL、Redis、Kafka 实例，并确保 Go 应用容器可以访问它们。**
+
+#### 步骤 (从源码构建 Go 应用镜像并运行)
+
+1.  **克隆仓库：**
+    ```bash
+    git clone https://github.com/NANYUYIBEI/Go-Todo-List-Application.git
+    cd Go-Todo-List-Application
+    ```
+2.  **构建 Docker 镜像：**
+    ```bash
+    docker build -t go-todo-app:1.0 .
+    ```
+3.  **运行 Docker 容器：**
+    *   你需要配置环境变量以指向你手动运行的 MySQL、Redis、Kafka 服务。
+    *   **示例：** (假设你在本地运行了 MySQL, Redis, Kafka，或者它们在可访问的 IP 地址上)
+        ```bash
+        docker run -d -p 8000:8000 \
+          -e MYSQL_DSN="root:mySecurePassword123@tcp(host.docker.internal:3306)/todo_app?charset=utf8mb4&parseTime=True&loc=Local" \
+          -e REDIS_ADDR="host.docker.internal:6379" \
+          -e KAFKA_BROKER="host.docker.internal:9092" \
+          -e KAFKA_TOPIC="todo_events" \
+          --name my-go-app go-todo-app:1.0
+        ```
+        *   **`host.docker.internal`** 是 Docker Desktop 在 Windows/macOS 上提供的一个特殊 DNS 名称，用于容器访问宿主机上的服务。如果你在 Linux 上，可能需要使用宿主机的实际 IP 地址。
+        *   请将 `mySecurePassword123` 替换为你的 MySQL 密码，并将 `3306`, `6379`, `9092` 替换为你的本地服务端口。
+4.  **访问应用：** `http://localhost:8000/static/index.html`。
+
+### 方式三：在本地直接运行 (传统方式)
+
+这种方式无需 Docker，但需要你在本地环境中安装并手动启动所有依赖服务。
+
+#### 前提条件
+
+*   **Go (版本 1.24.3 或更高)**：确保 Go 环境已配置。
+*   **Git**：用于克隆代码仓库。
+*   **MySQL 服务器**：已安装并运行，监听在 `localhost:3306`。
+*   **Redis 服务器**：已安装并运行，监听在 `localhost:6379`。
+*   **Kafka 集群 (包含 Zookeeper)**：已安装并运行，Kafka 监听在 `localhost:9092`。
+
+#### 步骤
+
+1.  **克隆仓库：**
+    ```bash
+    git clone https://github.com/NANYUYIBEI/Go-Todo-List-Application.git
+    cd Go-Todo-List-Application
+    ```
+2.  **配置 Go 环境变量 (如果你的 .env 文件不存在)：**
+    *   在项目根目录下创建一个 `.env` 文件，内容如下：
+        ```
+        MYSQL_DSN="root:your_mysql_password@tcp(localhost:3306)/todo_app?charset=utf8mb4&parseTime=True&loc=Local"
+        REDIS_ADDR="localhost:6379"
+        KAFKA_BROKER="localhost:9092"
+        KAFKA_TOPIC="todo_events"
+        SERVER_PORT="8000"
+        ```
+    *   请将 `your_mysql_password` 替换为你的本地 MySQL root 用户密码。
+3.  **下载 Go 依赖：**
+    ```bash
+    go mod tidy
+    ```
+4.  **运行应用程序：**
+    ```bash
+    go run main.go
+    ```
+    *   服务器将在 8000 端口启动。观察终端输出，确保 MySQL、Redis 和 Kafka 连接成功。
+
+5.  **访问应用：** 打开浏览器访问 `http://localhost:8000/static/index.html`。
 
 ---
 
@@ -161,7 +242,58 @@
 *   **镜像名称：** `nanyui/go-todo-app:1.0`
 *   **Docker Hub 地址：** [https://hub.docker.com/r/nanyui/go-todo-app](https://hub.docker.com/r/nanyui/go-todo-app) (请确保这个链接是正确的)
 
-你可以通过以下命令直接拉取并运行 Go 应用容器（需先配置好其他 Docker Compose 服务）：
+你可以通过以下命令直接拉取此镜像并集成到你自己的 `docker-compose.yml` 中（将 `app` 服务的 `build` 部分替换为 `image: nanyui/go-todo-app:1.0`）。
 
-```bash
-docker pull nanyui/go-todo-app:1.0
+---
+
+## 📂 项目结构
+
+Go-Todo-List-Application/
+├── .dockerignore
+├── .gitignore
+├── Dockerfile # Go 应用的 Dockerfile
+├── docker-compose.yml # 包含所有服务的 Docker Compose 文件
+├── go.mod # Go 模块依赖定义
+├── go.sum
+├── main.go # 应用入口，初始化配置、数据库、Redis、Kafka、Gin 路由
+├── README.md # 本文档
+├── internal/ # 内部模块
+│ ├── config/ # 应用程序配置
+│ │ └── config.go
+│ ├── database/ # 数据库相关
+│ │ ├── mysql.go # MySQL 连接和 Gorm 初始化
+│ │ └── models/
+│ │ └── todo.go # Gorm 数据模型
+│ ├── handlers/ # Gin 路由处理函数
+│ │ └── todo_handler.go
+│ ├── kafka/ # Kafka 客户端相关
+│ │ ├── common.go # Kafka 消息结构定义
+│ │ ├── consumer.go # Kafka 消息消费者
+│ │ └── producer.go # Kafka 消息生产者
+│ ├── redis/ # Redis 客户端相关
+│ │ └── client.go # Redis 连接和缓存操作
+│ └── routers/ # Gin 路由定义
+│ └── router.go
+└── static/ # 前端静态文件
+├── index.html
+├── script.js
+└── style.css
+
+
+---
+
+## 📡 API 端点
+
+本应用后端提供以下 API 接口供前端调用：
+
+*   **`POST /api/create`：** 创建一个新任务
+    *   请求体 (Body -> raw -> JSON): `{"name": "我的新任务", "description": "这是一个描述"}`
+*   **`GET /api/get-all-todos`：** 获取所有任务
+*   **`POST /api/update`：** 更新指定任务
+    *   请求体 (Body -> raw -> JSON): `{"id": 任务ID, "name": "新名字", "description": "新描述", "completed": true}`
+*   **`POST /api/delete`：** 删除指定任务
+    *   请求体 (Body -> raw -> JSON): `{"id": 要删除的任务ID}`
+
+（**注意：** 本项目为简化起见，更新和删除操作仍使用 POST 方法，而不是标准的 PUT/DELETE 方法。）
+
+---
